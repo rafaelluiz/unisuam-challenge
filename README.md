@@ -17,6 +17,8 @@ Estas pastas devem ter permissão de escrita para o Laravel funcionar corretamen
 
 A pasta `node_modules` não está no repositório, então antes de rodar o frontend localmente, execute:
 
+Obs.: Necessário ter o node instalado na versão `v21.7.3` ou superior.
+
 ```bash
 cd frontend
 npm install
