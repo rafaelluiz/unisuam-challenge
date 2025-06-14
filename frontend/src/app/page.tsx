@@ -132,7 +132,7 @@ export default function Page() {
             <div className="flex justify-center mt-4">Carregando...</div>
           )}
 
-          {filteredFollowings.length && (
+          {filteredFollowings.length > 0 && (
             <div className="w-full mt-4">
               <Followings
                 followings={filteredFollowings}

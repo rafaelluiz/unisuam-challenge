@@ -1,3 +1,4 @@
+import React from "react";
 import { Avatar } from "../avatar/Avatar";
 
 interface FollowingCardProps {
@@ -13,3 +14,5 @@ export const FollowingCard = ({ name, avatar }: FollowingCardProps) => {
     </div>
   );
 };
+
+export const FollowingCardProps = () => {};
