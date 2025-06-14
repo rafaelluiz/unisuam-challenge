@@ -1,103 +1,148 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useMemo, useState } from "react";
+import { Github, Link } from "lucide-react";
+import { UserDetails } from "@/components/user-details/UserDetails";
+import { Avatar } from "@/components/avatar/Avatar";
+import { FollowingCard } from "@/components/following-card/FollowingCard";
+import Pagination from "@/components/pagination/Pagination";
+import { useDebouncedCallback } from "use-debounce";
+import {
+  fetchGitHubFollowing,
+  fetchGitHubUser,
+  GitHubFollowing,
+  GitHubUser,
+} from "@/services/githubService";
+import { Followings } from "@/components/followings/Followings";
+
+export default function Page() {
+  const [username, setUsername] = useState<string>("");
+  const [user, setUser] = useState<GitHubUser | null>(null);
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [followings, setFollowings] = useState<GitHubFollowing[] | []>([]);
+  const [loadingFollowing, setLoadingFollowing] = useState<boolean>(false);
+  const [searchFollowing, setSearchFollowing] = useState<string>("");
+
+  const handleSearch = async (value: string) => {
+    if (!value.trim()) {
+      setUser(null);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setUser(null);
+
+    try {
+      const data = await fetchGitHubUser(value);
+      setUser(data);
+    } catch (err: any) {
+      setError(err.message || "Erro ao buscar usuário");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const debouncedSearch = useDebouncedCallback(handleSearch, 1000);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    debouncedSearch(value);
+  };
+
+  const getFollowings = async (username: string) => {
+    setLoadingFollowing(true);
+    try {
+      const data = await fetchGitHubFollowing(username);
+      setFollowings(data);
+    } catch (err: any) {
+      setError(err.message || "Erro ao buscar os followings do usuário");
+    } finally {
+      setLoadingFollowing(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoadingFollowing(true);
+    if (user) {
+      getFollowings(user.login);
+    } else {
+      setFollowings([]);
+    }
+    setLoadingFollowing(true);
+  }, [user]);
+
+  const filteredFollowings = useMemo(() => {
+    if (!searchFollowing.trim()) return followings;
+
+    return followings.filter((f) =>
+      f.login.toLowerCase().includes(searchFollowing.toLowerCase())
+    );
+  }, [searchFollowing, followings]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing now{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div>
+      <div className="flex justify-center items-center w-full">
+        <form className="flex flex-col mx-auto p-6 sm:p-2 w-full sm:w-4/5 md:w-3/4 lg:w-1/2">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={handleChange}
+              aria-describedby="helper-text-explanation"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="Digite o username do Github"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          </div>
+        </form>
+      </div>
+
+      {loading && <div className="flex justify-center mt-4">Carregando...</div>}
+
+      {error && <div className="flex justify-center mt-4">{error}</div>}
+
+      {user && (
+        <>
+          <div className="flex flex-col sm:flex-row w-full justify-center gap-8 mt-4">
+            <div className="flex flex-col justify-center items-center">
+              <Avatar url={user?.avatar_url} width="w-44" rounded />
+              <div className="flex justify-center gap-4 mt-2">
+                <a href={user.html_url} target="_blank" className="flex gap-1">
+                  <Github size={16} className="mt-0.75" /> Github
+                </a>
+
+                {user.blog && (
+                  <a href={user.blog} target="_blank" className="flex gap-1">
+                    <Link size={16} className="mt-0.75" />
+                    Site
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="w-full sm:w-2/4 md:w-2/5 lg:w-1/4 m-auto sm:m-0">
+              <UserDetails user={user} />
+            </div>
+          </div>
+
+          {loadingFollowing && (
+            <div className="flex justify-center mt-4">Carregando...</div>
+          )}
+
+          {filteredFollowings.length && (
+            <div className="w-full mt-4">
+              <Followings
+                followings={filteredFollowings}
+                searchFollowing={searchFollowing}
+                setSearchFollowing={setSearchFollowing}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
